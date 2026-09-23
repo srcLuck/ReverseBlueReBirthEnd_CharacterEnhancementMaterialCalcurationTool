@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リバリバ_キャラ育成素材計算機</title>
+</head>
+<body>
+    <h1>リバリバ_キャラ育成素材計算機</h1>
+    「現在Lv」「希望Lv」を入力してボタン押してね
+    <div>
+        <form action="get">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>現在Lv</th>
+                        <th>希望Lv</th>
+                        <th>要求素材1</th>
+                        <th>要求素材2</th>
+                        <th>要求素材3</th>
+                    </tr>
+                </thead>
+                <!--
+                id
+                    #now_○○             → それぞれの現在Lvを取得
+                    #future_○○          → それぞれの到達したいLvを取得
+                    #calcExecuteButton  → 計算ボタン
+                    mat_○○              → 素材数を表示させる
+
+                class
+                    .num_form           → 数値入力ボックスのサイズ調整用
+                    .materials          → 出力素材数の斜体消しに使いたい（想定）
+                -->
+                <tbody>
+                    <tr>
+                        <th>キャラLv</th>
+                        <th class="body_cell form_cell"><input type="text" id="now_chara" class="num_form" value="1" onfocus="this.select()"></th>
+                        <th class="body_cell form_cell"><input type="text" id="future_chara" class="num_form" value="200" onfocus="this.select()"></th>
+                        <th class="body_cell" colspan="3"><span id="mat_chara1" class="materials"></span></th>
+                    </tr>
+                    <tr>
+                        <th>覚醒</th>
+                        <th class="body_cell form_cell"><input type="text" id="now_awakening" class="num_form" value="1" onfocus="this.select()"></th>
+                        <th class="body_cell form_cell"><input type="text" id="future_awakening" class="num_form" value="13" onfocus="this.select()"></th>
+                        <th class="body_cell mat_cell"><span id="mat_awakening1" class="materials"></span></th>
+                        <th class="body_cell mat_cell"><span id="mat_awakening2" class="materials"></span></th>
+                        <th class="body_cell mat_cell"><span id="mat_awakening3" class="materials"></span></th>
+                    </tr>
+                    <tr>
+                        <th>BLADE</th>
+                        <th class="body_cell form_cell"><input type="text" id="now_blade" class="num_form" value="1" onfocus="this.select()"></th>
+                        <th class="body_cell form_cell"><input type="text" id="future_blade" class="num_form" value="13" onfocus="this.select()"></th>
+                        <th class="body_cell mat_cell"><span id="mat_blade1" class="materials"></span></th>
+                        <th class="body_cell mat_cell"><span id="mat_blade2" class="materials"></span></th>
+                        <th class="body_cell mat_cell"><span id="mat_blade3" class="materials"></span></th>
+                    </tr>
+                </tbody>
+            </table>
+            <input type="button" id="calcExecuteButton" class="calc_button" value="計算する">
+        </form>
+    </div>
+</body>
+
+<style>
+    table{
+        border-collapse: collapse;
+    }
+    th{
+        border: 1px solid;
+    }
+    input[type="text"]{
+        border: none;
+        background: transparent;
+    }
+    .body_cell{
+        height: 99px;
+    }
+    .form_cell{
+        background-color: #ddecec;
+    }
+    .mat_cell{
+        width: 111px;
+    }
+    .num_form{
+        width: 50px;
+        height: 99px;
+        text-align: right;
+    }
+    .materials{
+        font-size: 16px;
+        display: inline-block;
+        white-space: pre-line;
+        text-align: left;
+    }
+    .calc_button{
+        width: 400px;
+        height: 50px;
+        margin-top: 25px;
+        margin-left: 50px;
+    }
+</style>
+
+<script>
+    // キャラレベル
+    // PushPoolは下のほうに記載
+    let expPool = [100];
+    const expReport1Value = 100;
+    const expReport2Value = 1000;
+    const expReport3Value = 3000;
+    expPool = PushPool(expPool,   2,  39,  50);
+    expPool = PushPool(expPool,  40,  79, 100);
+    expPool = PushPool(expPool,  80, 119, 150);
+    expPool = PushPool(expPool, 120, 159, 200);
+    expPool = PushPool(expPool, 160, 179, 400);
+    expPool = PushPool(expPool, 180, 199, 600);
+
+    // 素材プール1
+    const matPool1 = [
+        [ 5,  7,  9,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [ 0,  0,  0,  5,  9, 13,  0,  0,  0,  0,  0,  0],
+        [ 0,  0,  0,  0,  0,  0,  5,  9, 13,  0,  0,  0],
+        [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  5, 11, 13]
+    ];
+
+    // 素材プール2
+    const matPool2 = [
+        [ 2,  3,  4,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [ 0,  0,  0,  2,  4,  6,  0,  0,  0,  0,  0,  0],
+        [ 0,  0,  0,  0,  0,  0,  2,  4,  8,  0,  0,  0],
+        [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  4,  6, 13]
+    ];
+
+    // 覚醒素材プール3（クオリア増幅材）
+    const matPoolAwakening = [ 0,  0,  0,  0,  0,  1,  2,  2,  4,  4,  8, 13];
+
+    // BLADE素材プール3
+    const matPoolBlade = [
+        [ 0,  3,  5,  7,  9, 11,  0,  0,  0,  0,  0,  0],
+        [ 0,  0,  0,  0,  0,  0,  3,  5,  7,  9, 11, 13]
+    ];
+
+    // ID対応用変数
+    let charaStartLevel = 0;
+    let charaEndLevel = 0;
+    let awakeningStartLevel = 0;
+    let awakeningEndLevel = 0;
+    let bladeStartLevel = 0;
+    let bladeEndLevel = 0;
+    const calcButton = document.getElementById("calcExecuteButton");
+    const matChara1 = document.getElementById("mat_chara1");
+    const matAwakening1 = document.getElementById("mat_awakening1");
+    const matAwakening2 = document.getElementById("mat_awakening2");
+    const matAwakening3 = document.getElementById("mat_awakening3");
+    const matBlade1 = document.getElementById("mat_blade1");
+    const matBlade2 = document.getElementById("mat_blade2");
+    const matBlade3 = document.getElementById("mat_blade3");
+
+    // ボタン押下処理ぶち込み
+    calcButton.addEventListener("click", CalcExecute);
+
+    // IDから数値を取得するだけの処理（書くのがめんどくさいから短縮化）
+    const GetLevel = (id) => Number(document.getElementById(id).value);
+
+
+
+    // calcExecuteButtonが押された時の処理を書く
+    function CalcExecute(){
+        charaStartLevel = GetLevel("now_chara")-1;
+        charaEndLevel = GetLevel("future_chara")-1;
+        awakeningStartLevel = GetLevel("now_awakening")-1;
+        awakeningEndLevel = GetLevel("future_awakening")-1;
+        bladeStartLevel = GetLevel("now_blade")-1;
+        bladeEndLevel = GetLevel("future_blade")-1;
+
+        let charaLvMatArray = CalcExpMaterial(CalcExpTotal(charaStartLevel, charaEndLevel));
+        let awakeningLvMatArray1 = CalcCommonMaterial(1, awakeningStartLevel, awakeningEndLevel);
+        let awakeningLvMatArray2 = CalcCommonMaterial(2, awakeningStartLevel, awakeningEndLevel);
+        let awakeningLvMat3 = CalcAwakeningMaterial3(awakeningStartLevel, awakeningEndLevel);
+        let bladeLvMatArray1 = CalcCommonMaterial(1, bladeStartLevel, bladeEndLevel);
+        let bladeLvMatArray2 = CalcCommonMaterial(2, bladeStartLevel, bladeEndLevel);
+        let bladeLvMatArray3 = CalcBladeMaterial3(bladeStartLevel, bladeEndLevel);
+
+        // ログ: 計算結果を出力
+        let logText = "計算実行\n";
+        logText += `キャラ Lv ${charaStartLevel+1} -> ${charaEndLevel+1}\n`;
+        logText += `├─ ExpレポートⅠ: ${charaLvMatArray[0]}\n├─ ExpレポートⅡ: ${charaLvMatArray[1]}\n└─ ExpレポートⅢ: ${charaLvMatArray[2]}\n`;
+        logText += `覚醒 Lv ${awakeningStartLevel+1} -> ${awakeningEndLevel+1}\n`;
+        logText += `├─ 素材1: ${awakeningLvMatArray1[0]}, ${awakeningLvMatArray1[1]}, ${awakeningLvMatArray1[2]}, ${awakeningLvMatArray1[3]}\n`;
+        logText += `├─ 素材2: ${awakeningLvMatArray2[0]}, ${awakeningLvMatArray2[1]}, ${awakeningLvMatArray2[2]}, ${awakeningLvMatArray2[3]}\n`;
+        logText += `└─ 素材3: ${awakeningLvMat3}\n`;
+        logText += `BLADE Lv: ${bladeStartLevel+1} -> ${bladeEndLevel+1}\n`;
+        logText += `├─ 素材1: ${bladeLvMatArray1[0]}, ${bladeLvMatArray1[1]}, ${bladeLvMatArray1[2]}, ${bladeLvMatArray1[3]}\n`;
+        logText += `├─ 素材2: ${bladeLvMatArray2[0]}, ${bladeLvMatArray2[1]}, ${bladeLvMatArray2[2]}, ${bladeLvMatArray2[3]}\n`;
+        logText += `└─ 素材3: ${bladeLvMatArray3}\n`;
+        console.log(logText);
+
+        // 画面に反映する
+        matChara1.textContent = `ExpレポートⅢ: ${charaLvMatArray[2]}\nExpレポートⅡ: ${charaLvMatArray[1]}\nExpレポートⅠ: ${charaLvMatArray[0]}`;
+        matAwakening1.textContent = `物資Ⅳ: ${awakeningLvMatArray1[3]}\n物資Ⅲ: ${awakeningLvMatArray1[2]}\n物資Ⅱ: ${awakeningLvMatArray1[1]}\n物資Ⅰ: ${awakeningLvMatArray1[0]}`;
+        matAwakening2.textContent = `物資Ⅳ: ${awakeningLvMatArray2[3]}\n物資Ⅲ: ${awakeningLvMatArray2[2]}\n物資Ⅱ: ${awakeningLvMatArray2[1]}\n物資Ⅰ: ${awakeningLvMatArray2[0]}`;
+        matAwakening3.textContent = `ｸｵﾘｱ増幅材: ${awakeningLvMat3}`;
+        matBlade1.textContent = `物資Ⅳ: ${bladeLvMatArray1[3]}\n物資Ⅲ: ${bladeLvMatArray1[2]}\n物資Ⅱ: ${bladeLvMatArray1[1]}\n物資Ⅰ: ${bladeLvMatArray1[0]}`;
+        matBlade2.textContent = `物資Ⅳ: ${bladeLvMatArray2[3]}\n物資Ⅲ: ${bladeLvMatArray2[2]}\n物資Ⅱ: ${bladeLvMatArray2[1]}\n物資Ⅰ: ${bladeLvMatArray2[0]}`;
+        matBlade3.textContent = `物資Ⅱ: ${bladeLvMatArray3[1]}\n物資Ⅰ: ${bladeLvMatArray3[0]}`;
+    }
+
+    // キャラLvの必要経験値を計算する処理
+    // 返り値：整数
+    function CalcExpTotal(startLevel, endLevel){
+        endLevel --;
+        let exp = 0;
+        for(let level=startLevel; level<=endLevel; level++){
+            exp += expPool[level];
+        }
+        return exp;
+    }
+
+    // キャラLvの必要素材数を計算する処理
+    // 引数　：必要経験値（CalExpTotal）
+    // 返り値：整数配列
+    // [0]: EXPレポートⅠ
+    // [1]: EXPレポートⅡ
+    // [2]: EXPレポートⅢ
+    function CalcExpMaterial(exp){
+        let report = [0, 0, 0];
+        report[2] = Math.floor(exp/expReport3Value);
+        exp -= expReport3Value*report[2];
+        report[1] = Math.floor(exp/expReport2Value);
+        exp -= expReport2Value*report[1];
+        report[0] = Math.floor(exp/expReport1Value);
+        exp -= expReport1Value*report[0];
+        if(exp>0) report[0] ++;
+
+        // 上位素材1つ分と同等の経験値量だったら繰り上げる
+        if(report[0]>=10){
+            report[1] ++;
+            report[0] -= 10;
+        }
+
+        if(report[1]>=3){
+            report[2] ++;
+            report[1] -= 3;
+        }
+
+        return report;
+    }
+
+    // 覚醒Lvの必要素材数1or2を計算する処理
+    // 引数　：素材識別数値（1: 共通素材1, 2: 共通素材2）, 開始レベル, 終了レベル
+    // 返り値：整数配列
+    // [0]: ★1必要素材数
+    // [1]: ★2必要素材数
+    // [2]: ★3必要素材数
+    // [3]: ★4必要素材数
+    function CalcCommonMaterial(matNum, startLevel, endLevel){
+        let mat = [0, 0, 0, 0];
+        switch(matNum){
+            case 1:
+                for(let level=startLevel; level<endLevel; level++){
+                    mat[0] += matPool1[0][level];
+                    mat[1] += matPool1[1][level];
+                    mat[2] += matPool1[2][level];
+                    mat[3] += matPool1[3][level];
+                }
+                break;
+            case 2:
+                for(let level=startLevel; level<endLevel; level++){
+                    mat[0] += matPool2[0][level];
+                    mat[1] += matPool2[1][level];
+                    mat[2] += matPool2[2][level];
+                    mat[3] += matPool2[3][level];
+                }
+                break;
+            default: break;
+        }
+        return mat;
+    }
+
+    // 覚醒Lvの必要素材数3を計算する処理
+    function CalcAwakeningMaterial3(startLevel, endLevel){
+        let mat = 0;
+        for(let level=startLevel; level<endLevel; level++) mat += matPoolAwakening[level];
+        return mat;
+    }
+
+    // BLADE Lvの必要素材数3を計算する処理
+    function CalcBladeMaterial3(startLevel, endLevel){
+        let mat = [0, 0];
+        for(let level=startLevel; level<endLevel; level++){
+            mat[0] += matPoolBlade[0][level];
+            mat[1] += matPoolBlade[1][level];
+        }
+        return mat;
+    }
+
+
+
+    // プール用配列の指定レベルAから指定レベルBまで、指定値から一定分増やしつつ配列に追加し続ける処理
+    // 引数　: プール用配列, 開始レベル, 終了レベル（ここ未満なら追加）, 経験値の増加量
+    // 返り値: 要素を追加した配列（元の要素は残ってるはず）
+    function PushPool(poolArray, startLevel, endLevel, addValue){
+        startLevel --;
+        endLevel --;
+        let pushValue = poolArray[poolArray.length-1];
+        for(let level=startLevel; level<=endLevel; level++){
+            pushValue += addValue;
+            poolArray.push(pushValue);
+        }
+        return poolArray;
+    }
+
+</script>
+
+</html>
