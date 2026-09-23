@@ -1,1 +1,4 @@
 # ReverseBlueReBirthEnd_CharacterEnhancementMaterialCalcurationTool
+色のついたセルに、それぞれレベルを入力してください。
+一通り入力したら「計算する」ボタンを押してください。
+とりあえず最低限の数字だけ出てきます。
